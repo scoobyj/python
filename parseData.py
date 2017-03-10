@@ -1,11 +1,5 @@
-#!/usr/local/bin/python2.7
-# encoding: utf-8
 '''
-com.commerce.support.highcpu.parseData -- shortdesc
-
-
-
-
+Created on Mar 10, 2017
 '''
 from sys import version_info
 from itertools import islice

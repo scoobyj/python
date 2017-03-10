@@ -10,36 +10,60 @@ com.commerce.support.highcpu.parseData -- shortdesc
 from sys import version_info
 from itertools import islice
 import glob, os , pprint ,os.path, re
+from CodeWarrior.Standard_Suite import line
 
-
+# Patterns
+pat_datetime = "^1TIDATETIME\\s+Date:\\s+(\\S+) at (\\S+)"
+cr_datetime = re.compile(pat_datetime)
+pat_native = "^3XMTHREADINFO1\\s+\(native thread ID:(\\S+)(.*)"
+cr_native = re.compile(pat_native)
+pat_tname = "^3XMTHREADINFO\\s+\\S(\\S+\\s\\S\\s\\S+)\\S(.*)"
+cr_tname = re.compile(pat_tname)
+pat_top = "^top\\s\\S\\s(\\S+)(.*)"
+cr_top = re.compile(pat_top)
+pat_topd = "(\\S+)\\s(.*)\\s\\S\\s(\\S+)(.*)"
+cr_topd = re.compile(pat_topd)
                                        
 def doprocessjavacore(filename):
     with open(filename) as f:
                 for line in f:
-                    if line.startswith('1TIDATETIME'):
-                        global jctime
-                        jctime = line.split("at ",1)[1]
-                        print (jctime)
-                    if "native thread ID:" in line:
-                                global threadId
-                                threadId=line.split("ID:")[1].split(",")[0]
-                    if line.startswith('3XMTHREADINFO      "'):
-                           global threadName
-                           threadName = line.split('"')[1].split('"')[0]
-                           jcdata = [jctime,threadId,threadName]
-                           print(jcdata)  
+                    j = cr_datetime.search(line)
+                    if j:
+                       global jctime
+                       jctime = j.group(2)
+                    n = cr_native.search(line)
+                    if n:
+                        global threadId
+                        threadId = n.group(1)
+                    t = cr_tname.search(line)
+                    if t:
+                        global threadName
+                        threadName = t.group(1)
+                        jcdata = [jctime,threadId,threadName]
+                        print(jcdata)  
 
 def doprocesstop(filename):
     with open(filename) as t:
             for line in t:
-                if line.startswith("top"):
-                    topdata = []
-                    topdata.append(line)
-                                      #print(topdata)
-                    for i in range(4):
-                        topdata.append( ''.join(islice(t,4)))
-                        print(topdata)                          
-                                         
+                tt = cr_top.search(line)
+                if tt:
+                    toptime = tt.group(1)
+                    topdata =[]
+                    for i in range(16):
+                        topdata.append(t.next())
+                    if toptime == jctime:   # This is comparing to the last timestamp from jc instead of each
+                        print ''.join(topdata)
+                        for line in topdata[6:]:
+                            data = cr_topd.search(line)
+                            print(data)
+                            if data:
+                                pid = data.group(1)
+                                pid = int(pid)
+                                hex = hex(pid)
+                            
+                        
+                    
+                       
 
 
 def main():
@@ -51,11 +75,9 @@ def main():
         response = raw_input("Please enter directory where high cpu data resides: ")    
   
     for filename in glob.glob(os.path.join(response,'java*')):
-          doprocessjavacore(filename)
+          doprocessjavacore(filename)                                                    
                               
-                              
-                              
-    for filenamet in glob.glob(os.path.join(response,'top*')):
+    for filename in glob.glob(os.path.join(response,'top*')):
             doprocesstop(filename)
                         
                                          

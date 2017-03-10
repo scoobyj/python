@@ -1,16 +1,20 @@
 #!/usr/local/bin/python2.7
 # encoding: utf-8
+'''
+com.commerce.support.highcpu.parseData -- shortdesc
 
+@author:     Jeff Johnson
+
+
+'''
 from sys import version_info
+from itertools import islice
 import glob, os , pprint ,os.path, re
-py3 = version_info[0] > 2
-if py3:
-  response = input("Please enter directory where high cpu data resides: ")
-else:
-  response = raw_input("Please enter directory where high cpu data resides: ")    
-  
-for filename in glob.glob(os.path.join(response,'java*')):
-          with open(filename) as f:
+
+
+                                       
+def doprocessjavacore(filename):
+    with open(filename) as f:
                 for line in f:
                     if line.startswith('1TIDATETIME'):
                         global jctime
@@ -24,19 +28,37 @@ for filename in glob.glob(os.path.join(response,'java*')):
                            threadName = line.split('"')[1].split('"')[0]
                            jcdata = [jctime,threadId,threadName]
                            print(jcdata)  
-                           
-                              
-for filenamet in glob.glob(os.path.join(response,'top*')):
-                        with open(filenamet) as t:
-                            tdata = {}
-                            for line in t:
-                                    #line = line.strip()
-                                    if not line: continue
-                                    if line.startswith('top'):
-                                        if line not in tdata: tdata[line] = []
-                                        top = line
-                                        continue
 
-                                    tdata[top].append(line)
-                            
-                                 
+def doprocesstop(filename):
+    with open(filename) as t:
+            for line in t:
+                if line.startswith("top"):
+                    topdata = []
+                    topdata.append(line)
+                                      #print(topdata)
+                    for i in range(4):
+                        topdata.append( ''.join(islice(t,4)))
+                        print(topdata)                          
+                                         
+
+
+def main():
+    py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
+
+    if py3:
+        response = input("Please enter directory where high cpu data resides: ")
+    else:
+        response = raw_input("Please enter directory where high cpu data resides: ")    
+  
+    for filename in glob.glob(os.path.join(response,'java*')):
+          doprocessjavacore(filename)
+                              
+                              
+                              
+    for filenamet in glob.glob(os.path.join(response,'top*')):
+            doprocesstop(filename)
+                        
+                                         
+if __name__ == "__main__":
+    main()
+             

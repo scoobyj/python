@@ -3,7 +3,7 @@
 '''
 com.commerce.support.highcpu.parseData -- shortdesc
 
-@author:     Jeff Johnson
+
 
 
 '''
@@ -52,15 +52,13 @@ def doprocesstop(filename):
                     for i in range(16):
                         topdata.append(t.next())
                     if toptime == jctime:   # This is comparing to the last timestamp from jc instead of each
-                        print ''.join(topdata)
+                        print (''.join(topdata))
                         for line in topdata[6:]:
                             data = cr_topd.search(line)
-                            print(data)
                             if data:
-                                pid = data.group(1)
-                                pid = int(pid)
-                                hex = hex(pid)
-                            
+                                pid = int(data.group(1))
+                                hpid = hex(pid)
+                                print(pid,hpid)
                         
                     
                        

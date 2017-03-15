@@ -15,8 +15,8 @@ pat_tname = "^3XMTHREADINFO\\s+\\S(\\S+\\s\\S\\s\\S+)\\S(.*)"
 cr_tname = re.compile(pat_tname)
 pat_top = "^top\\s\\S\\s(\\S+)(.*)"
 cr_top = re.compile(pat_top)
-pat_topd = "(\\S+)\\s(.*)\\s\\S\\s(\\S+)(.*)"
-cr_topd = re.compile(pat_topd)
+pat_desc = "^\\s+(\\S+)(.*)"
+cr_desc = re.compile(pat_desc)
 pat_time = "(\\S+)\\s(\\S+)\\s(\\S+\\s:\\s\\S+)"
 cr_time = re.compile(pat_time)
       
@@ -29,8 +29,9 @@ def doprocessjavacore(filename):
     with open(filename) as f: 
                 for line in f:
                     j = cr_datetime.search(line)
-                    if j:
-                       jctime = j.group(2)
+                    if j: 
+                        global jctime
+                        jctime = j.group(2)
                     n = cr_native.search(line)
                     if n:
                         global threadId
@@ -39,23 +40,23 @@ def doprocessjavacore(filename):
                     if t:
                         global threadName
                         threadName = t.group(1)
-                        tmp = [jctime,threadId,threadName]
+                        tmp = [jctime + threadId +threadName]
                         global jcdata
                         jcdata.append(tmp)
-                return jcdata
+                return jcdata,jctime
 
 def doprocesstop(filename):
     with open(filename) as t:
-            for line in t:
-                global topdata
-                tt = cr_top.search(line)
-                topdata.append(line)
-                if tt:
-                    toptime = tt.group(1)
+        start = False
+        global topdata
+        for line in t:
+            tt = re.match(cr_top,line)
+            if tt:
+                if jctime == tt.group(1):
+                    topdata.append(line + ''.join(islice(t,16)))
                     
-                    for i in range(16):
-                        topdata.append(t.next())
-            return topdata
+        return topdata
+                
                        
 
 
@@ -65,16 +66,22 @@ def main():
     if py3:
         response = input("Please enter directory where high cpu data resides: ")
     else:
-        response = raw_input("Please enter directory where high cpu data resides: ")    
-  
+        response = raw_input("Please enter directory where high cpu data resides: ") 
+        
     for filename in glob.glob(os.path.join(response,'java*')):
           doprocessjavacore(filename)
-    print jcdata
-    
+          for filename in glob.glob(os.path.join(response,'top*')):
+            doprocesstop(filename) 
+    print ''.join(topdata)
+    #for i, tdata in enumerate(topdata):
+     #       match = cr_desc.search(tdata)
+      #      if match:
+       #         print match.group(1)
+               
         
-    for filename in glob.glob(os.path.join(response,'top*')):
-            doprocesstop(filename)
-            print topdata    
+        
+    
+            
             
                                 
                                          

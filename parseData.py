@@ -15,10 +15,12 @@ pat_tname = "^3XMTHREADINFO\\s+\\S(\\S+\\s\\S\\s\\S+)\\S(.*)"
 cr_tname = re.compile(pat_tname)
 pat_top = "^top\\s\\S\\s(\\S+)(.*)"
 cr_top = re.compile(pat_top)
-pat_desc = "^\\s+(\\S+)(.*)"
+pat_desc = "\\s(\\S+)(.*) SHR S (\\S+)(.*)"
 cr_desc = re.compile(pat_desc)
 pat_time = "(\\S+)\\s(\\S+)\\s(\\S+\\s:\\s\\S+)"
 cr_time = re.compile(pat_time)
+pat_data = "^(\\S+)(.*)(\\S?\.\\S)(.*)java\\s+"
+cr_data = re.compile(pat_data)
       
 jcdata = []  
 jctime = []
@@ -40,7 +42,7 @@ def doprocessjavacore(filename):
                     if t:
                         global threadName
                         threadName = t.group(1)
-                        tmp = [jctime + threadId +threadName]
+                        tmp = [threadId,threadName]
                         global jcdata
                         jcdata.append(tmp)
                 return jcdata,jctime
@@ -53,8 +55,10 @@ def doprocesstop(filename):
             tt = re.match(cr_top,line)
             if tt:
                 if jctime == tt.group(1):
-                    topdata.append(line + ''.join(islice(t,16)))
-                    
+                    topdata.append(line)
+                    #topdata.insert(line + ''.join(islice(t,16)))
+                    for i in range(16):
+                        topdata.append(t.next())
         return topdata
                 
                        
@@ -67,16 +71,14 @@ def main():
         response = input("Please enter directory where high cpu data resides: ")
     else:
         response = raw_input("Please enter directory where high cpu data resides: ") 
-        
     for filename in glob.glob(os.path.join(response,'java*')):
-          doprocessjavacore(filename)
-          for filename in glob.glob(os.path.join(response,'top*')):
+        doprocessjavacore(filename)
+        for filename in glob.glob(os.path.join(response,'top*')):
             doprocesstop(filename) 
-    print ''.join(topdata)
-    #for i, tdata in enumerate(topdata):
-     #       match = cr_desc.search(tdata)
-      #      if match:
-       #         print match.group(1)
+    for line in topdata:
+        match = cr_data.search(line)
+        if match:
+            print match.group(1,2,3,4) # crappppp  my regex sucks
                
         
         

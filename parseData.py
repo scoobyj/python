@@ -88,11 +88,9 @@ def main():
                     if jc:
                         jctid = jc.group(2)
                         jctid = jctid.upper()
-                        
                         if jctid == hpid and toptime == jc.group(1):
-                         #   print "yes"
-                            print ( "Time:  " +  toptime +  "  cpu:  " + cpu +"       ThreadName :  " + jc.group(3))
-            
+                                print ( "Time:  " +  toptime +  "  cpu:  " + cpu +"       ThreadName :  " + jc.group(3))
+                         #### I got a bug and I cant figure it out   
                                 
                                          
 if __name__ == "__main__":

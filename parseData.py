@@ -9,7 +9,7 @@ from CodeWarrior.Standard_Suite import line
 # Patterns
 pat_datetime = "^1TIDATETIME\\s+Date:\\s+(\\S+) at (\\S+)"
 cr_datetime = re.compile(pat_datetime)
-pat_native = "^3XMTHREADINFO1\\s+\(native thread ID:(\\S+)(.*)"
+pat_native = "^3XMTHREADINFO1\\s+\(native thread ID:(\\S+),(.*)"
 cr_native = re.compile(pat_native)
 pat_tname = "^3XMTHREADINFO\\s+\\S(\\S+\\s\\S\\s\\S+)\\S(.*)"
 cr_tname = re.compile(pat_tname)
@@ -19,9 +19,11 @@ pat_desc = "\\s(\\S+)(.*) SHR S (\\S+)(.*)"
 cr_desc = re.compile(pat_desc)
 pat_time = "(\\S+)\\s(\\S+)\\s(\\S+\\s:\\s\\S+)"
 cr_time = re.compile(pat_time)
-pat_data = "^(\\S+)(.*)(\\S?\.\\S)(.*)java\\s+"
+pat_data = "(\\d+).*?[+-]?\\d*\\.\\d+(?![-+0-9\\.]).*?([+-]?\\d*\\.\\d+)(?![-+0-9\\.]).*?(java)\\s+"
 cr_data = re.compile(pat_data)
-      
+pat_jcdata = "(\\S+)\\s(\\S+)\\s(\\S+\\s+:\\s+\\S+)"
+cr_jcdata = re.compile(pat_jcdata)
+
 jcdata = []  
 jctime = []
 topdata = []   
@@ -30,6 +32,7 @@ topdata = []
 def doprocessjavacore(filename):
     with open(filename) as f: 
                 for line in f:
+                    global jcdata
                     j = cr_datetime.search(line)
                     if j: 
                         global jctime
@@ -42,21 +45,17 @@ def doprocessjavacore(filename):
                     if t:
                         global threadName
                         threadName = t.group(1)
-                        tmp = [threadId,threadName]
-                        global jcdata
-                        jcdata.append(tmp)
+                        jcdata.append(jctime + " " + threadId + " " +  threadName)
                 return jcdata,jctime
 
 def doprocesstop(filename):
     with open(filename) as t:
-        start = False
         global topdata
         for line in t:
             tt = re.match(cr_top,line)
             if tt:
                 if jctime == tt.group(1):
                     topdata.append(line)
-                    #topdata.insert(line + ''.join(islice(t,16)))
                     for i in range(16):
                         topdata.append(t.next())
         return topdata
@@ -76,14 +75,23 @@ def main():
         for filename in glob.glob(os.path.join(response,'top*')):
             doprocesstop(filename) 
     for line in topdata:
-        match = cr_data.search(line)
-        if match:
-            print match.group(1,2,3,4) # crappppp  my regex sucks
-               
-        
-        
-    
-            
+        tt = re.match(cr_top,line)
+        if tt:
+            toptime = tt.group(1)
+        pt = cr_data.search(line)
+        if pt:
+                hpid = hex(int(pt.group(1)))
+                hpid = hpid.upper()
+                cpu = pt.group(2)
+                for line in jcdata:
+                    jc = cr_jcdata.search(line)
+                    if jc:
+                        jctid = jc.group(2)
+                        jctid = jctid.upper()
+                        
+                        if jctid == hpid and toptime == jc.group(1):
+                         #   print "yes"
+                            print ( "Time:  " +  toptime +  "  cpu:  " + cpu +"       ThreadName :  " + jc.group(3))
             
                                 
                                          

@@ -22,34 +22,37 @@ pat_data = "(\\d+).*?[+-]?\\d*\\.\\d+(?![-+0-9\\.]).*?([+-]?\\d*\\.\\d+)(?![-+0-
 cr_data = re.compile(pat_data)
 pat_jcdata = "(\\S+)\\s(\\S+)\\s(\\S+\\s+:\\s+\\S+)"
 cr_jcdata = re.compile(pat_jcdata)
-
-jcdata = []  
-jctime = []
-topdata = []   
-      
                                        
 def doprocessjavacore(filename):
+    jcdata = []  
+    jctime = None
+    threadId = None
+    threadName = None
     with open(filename) as f: 
                 for line in f:
-                    global jcdata
+#                    global jcdata
                     j = cr_datetime.search(line)
                     if j: 
-                        global jctime
+#                        global jctime
                         jctime = j.group(2)
+                        continue
                     n = cr_native.search(line)
                     if n:
-                        global threadId
+#                        global threadId
                         threadId = n.group(1)
+                        continue
                     t = cr_tname.search(line)
-                    if t:
-                        global threadName
+                    if jctime and threadId and t:
+#                        global threadName
                         threadName = t.group(1)
                         jcdata.append(jctime + " " + threadId + " " +  threadName)
+                print ("JC file %s\n%s\n" % (filename, "\n\t".join(jcdata)))
                 return jcdata,jctime
 
-def doprocesstop(filename):
+def doprocesstop(filename, jctime):
+    topdata = []   
     with open(filename) as t:
-        global topdata
+#        global topdata
         for line in t:
             tt = re.match(cr_top,line)
             if tt:
@@ -57,6 +60,7 @@ def doprocesstop(filename):
                     topdata.append(line)
                     for i in range(16):
                         topdata.append(t.next())
+        print ("TOP file %s\n%s\n" % (filename, "\t".join(topdata)))
         return topdata
                 
                        
@@ -69,10 +73,16 @@ def main():
         response = input("Please enter directory where high cpu data resides: ")
     else:
         response = raw_input("Please enter directory where high cpu data resides: ") 
+    alljcdata = []
     for filename in glob.glob(os.path.join(response,'java*')):
-        doprocessjavacore(filename)
+        (filejcdata, jctime) = doprocessjavacore(filename)
+        alljcdata.extend(filejcdata)
+        topdata = []
         for filename in glob.glob(os.path.join(response,'top*')):
-            doprocesstop(filename) 
+            tmptopdata = doprocesstop(filename, jctime)
+            print ("topdata: %s\n" % "\t".join(tmptopdata))
+            topdata.extend(tmptopdata) 
+    print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
     for line in topdata:
         tt = re.match(cr_top,line)
         if tt:
@@ -82,7 +92,7 @@ def main():
                 hpid = hex(int(pt.group(1)))
                 hpid = hpid.upper()
                 cpu = pt.group(2)
-                for line in jcdata:
+                for line in alljcdata:
                     jc = cr_jcdata.search(line)
                     if jc:
                         jctid = jc.group(2)

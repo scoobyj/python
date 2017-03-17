@@ -11,6 +11,9 @@ cr_datetime = re.compile(pat_datetime)
 pat_native = "^3XMTHREADINFO1\\s+\(native thread ID:(\\S+),(.*)"
 cr_native = re.compile(pat_native)
 pat_tname = "^3XMTHREADINFO\\s+\\S(\\S+\\s\\S\\s\\S+)\\S(.*)"
+
+
+
 cr_tname = re.compile(pat_tname)
 pat_top = "^top\\s\\S\\s(\\S+)(.*)"
 cr_top = re.compile(pat_top)
@@ -30,29 +33,24 @@ def doprocessjavacore(filename):
     threadName = None
     with open(filename) as f: 
                 for line in f:
-#                    global jcdata
                     j = cr_datetime.search(line)
                     if j: 
-#                        global jctime
                         jctime = j.group(2)
                         continue
-                    n = cr_native.search(line)
-                    if n:
-#                        global threadId
-                        threadId = n.group(1)
-                        continue
+
                     t = cr_tname.search(line)
-                    if jctime and threadId and t:
-#                        global threadName
+                    if t:
                         threadName = t.group(1)
+                        continue
+                    n = cr_native.search(line)
+                    if jctime and threadName and n:
+                        threadId = n.group(1)
                         jcdata.append(jctime + " " + threadId + " " +  threadName)
-                print ("JC file %s\n%s\n" % (filename, "\n\t".join(jcdata)))
                 return jcdata,jctime
 
 def doprocesstop(filename, jctime):
     topdata = []   
     with open(filename) as t:
-#        global topdata
         for line in t:
             tt = re.match(cr_top,line)
             if tt:
@@ -60,7 +58,6 @@ def doprocesstop(filename, jctime):
                     topdata.append(line)
                     for i in range(16):
                         topdata.append(t.next())
-        print ("TOP file %s\n%s\n" % (filename, "\t".join(topdata)))
         return topdata
                 
                        
@@ -80,7 +77,6 @@ def main():
         topdata = []
         for filename in glob.glob(os.path.join(response,'top*')):
             tmptopdata = doprocesstop(filename, jctime)
-            print ("topdata: %s\n" % "\t".join(tmptopdata))
             topdata.extend(tmptopdata) 
     print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
     for line in topdata:

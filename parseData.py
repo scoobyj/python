@@ -4,7 +4,6 @@ Created on Mar 10, 2017
 from sys import version_info
 from itertools import islice
 import glob, os , pprint ,os.path, re
-from CodeWarrior.Standard_Suite import line
 
 # Patterns
 pat_datetime = "^1TIDATETIME\\s+Date:\\s+(\\S+) at (\\S+)"

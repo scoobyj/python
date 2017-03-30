@@ -2,19 +2,21 @@
 Created on Mar 10, 2017
 '''
 from sys import version_info
-from itertools import islice
-import glob, os , pprint ,os.path, re
+from itertools import islice, izip
+import glob, os , pprint ,os.path, re, datetime
+import itertools
+from dateutil.parser import parse
+
 
 # Patterns
 pat_datetime = "^1TIDATETIME\\s+Date:\\s+(\\S+) at (\\S+)"
 cr_datetime = re.compile(pat_datetime)
 pat_native = "^3XMTHREADINFO1\\s+\(native thread ID:(\\S+),(.*)"
 cr_native = re.compile(pat_native)
-pat_tname = "^3XMTHREADINFO\\s+\\S(\\S+\\s\\S\\s\\S+)\\S(.*)"
-
-
-
+pat_tname = "^3XMTHREADINFO\\s+\"(.*)\"(.*)"
 cr_tname = re.compile(pat_tname)
+pat_tname2 = "^3XMTHREADINFO\\s+(A.*)"
+cr_tname2 = re.compile(pat_tname2)
 pat_top = "^top\\s\\S\\s(\\S+)(.*)"
 cr_top = re.compile(pat_top)
 pat_desc = "\\s(\\S+)(.*) SHR S (\\S+)(.*)"
@@ -27,7 +29,7 @@ pat_jcdata = "(\\S+)\\s(\\S+)\\s(\\S+\\s+:\\s+\\S+)"
 cr_jcdata = re.compile(pat_jcdata)
                                        
 def doprocessjavacore(filename):
-    jcdata = []  
+    mydic = {}
     jctime = None
     threadId = None
     threadName = None
@@ -37,30 +39,44 @@ def doprocessjavacore(filename):
                     if j: 
                         jctime = j.group(2)
                         continue
-
                     t = cr_tname.search(line)
-                    if t:
+                    ta = cr_tname2.search(line)
+                    if jctime and t:
                         threadName = t.group(1)
+                    elif jctime and ta:
+                        threadName = ta.group(1)
                         continue
                     n = cr_native.search(line)
                     if jctime and threadName and n:
-                        threadId = n.group(1)
-                        jcdata.append(jctime + " " + threadId + " " +  threadName)
-                return jcdata,jctime
+                            threadId = n.group(1)
+                            jckey = (threadId.upper())
+                            mydic[jckey] = threadName
+                            continue
+                    
+                return mydic,jctime
 
-def doprocesstop(filename, jctime):
+def doprocesstop(filename, time):
     topdata = []   
     with open(filename) as t:
         for line in t:
             tt = re.match(cr_top,line)
             if tt:
-                if jctime == tt.group(1):
+                if tt.group(1) in time:
                     topdata.append(line)
                     for i in range(16):
                         topdata.append(t.next())
         return topdata
                 
-                       
+def doformattime(jctime):    ##### need better way to do this
+    time = []  
+    time.append(jctime)
+    t = parse(jctime)
+    tt = t + datetime.timedelta(0,1)
+    time.append(str(tt.time()))
+    ttt = t + datetime.timedelta(0,-1)
+    time.append(str(ttt.time()))
+    return time
+    
 
 
 def main():
@@ -70,33 +86,39 @@ def main():
         response = input("Please enter directory where high cpu data resides: ")
     else:
         response = raw_input("Please enter directory where high cpu data resides: ") 
-    alljcdata = []
     for filename in glob.glob(os.path.join(response,'java*')):
-        (filejcdata, jctime) = doprocessjavacore(filename)
-        alljcdata.extend(filejcdata)
+        (mydic,jctime) = doprocessjavacore(filename)
         topdata = []
+        time = []
+        tmptime = doformattime(jctime)
+        time.extend(tmptime)
         for filename in glob.glob(os.path.join(response,'top*')):
-            tmptopdata = doprocesstop(filename, jctime)
+            tmptopdata = doprocesstop(filename, time)
             topdata.extend(tmptopdata) 
-    print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
-    for line in topdata:
-        tt = re.match(cr_top,line)
-        if tt:
-            toptime = tt.group(1)
-        pt = cr_data.search(line)
-        if pt:
+        #print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
+   # print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
+    #print ("MYDIC\n%s\n" % "\n".join(mydic))
+        for line in topdata:
+            tt = re.match(cr_top,line)
+            if tt:
+                toptime = tt.group(1)
+                print line.rstrip('\n')
+                
+                
+                # got to be an easier way to do this.... 
+            if 'Tasks' in line: print line.rstrip('\n')
+            if 'Cpu' in line: print line.rstrip('\n')
+            if 'Mem' in line: print line.rstrip('\n')
+            if 'Swap' in line: print line.rstrip('\n')
+            if 'PID' in line: print line.rstrip('\n') + ("ThreadName")
+
+            pt = cr_data.search(line)
+            if pt:
                 hpid = hex(int(pt.group(1)))
-                hpid = hpid.upper()
-                cpu = pt.group(2)
-                for line in alljcdata:
-                    jc = cr_jcdata.search(line)
-                    if jc:
-                        jctid = jc.group(2)
-                        jctid = jctid.upper()
-                        if jctid == hpid and toptime == jc.group(1):
-                                print ( "Time:  " +  toptime +  "  cpu:  " + cpu +"       ThreadName :  " + jc.group(3))
-                         #### I got a bug and I cant figure it out   
-                                
+                key = (hpid.upper())
+                if key in mydic:
+                    print (line.rstrip('\n') + (mydic.get(key,None)))
+                        
                                          
 if __name__ == "__main__":
     main()

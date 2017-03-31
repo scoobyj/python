@@ -2,9 +2,7 @@
 Created on Mar 10, 2017
 '''
 from sys import version_info
-from itertools import islice, izip
 import glob, os , pprint ,os.path, re, datetime
-import itertools
 from dateutil.parser import parse
 
 
@@ -33,7 +31,7 @@ def doprocessjavacore(filename):
     jctime = None
     threadId = None
     threadName = None
-    with open(filename) as f: 
+    with open(filename,'r+') as f: 
                 for line in f:
                     j = cr_datetime.search(line)
                     if j: 
@@ -52,19 +50,26 @@ def doprocessjavacore(filename):
                             jckey = (threadId.upper())
                             mydic[jckey] = threadName
                             continue
-                    
+                    #if line.startswith("NULL"):
+                    #    keepSet = False
+                    #if keepSet:
+                    #    print line
+                    #if line.startswith("3XMTHREADINFO3           Java callstack:"):
+                     #   keepSet = True
+                        
+                        
                 return mydic,jctime
 
 def doprocesstop(filename, time):
     topdata = []   
-    with open(filename) as t:
+    with open(filename,'r+') as t:
         for line in t:
             tt = re.match(cr_top,line)
             if tt:
                 if tt.group(1) in time:
                     topdata.append(line)
                     for i in range(16):
-                        topdata.append(t.next())
+                        topdata.append(next(t))
         return topdata
                 
 def doformattime(jctime):    ##### need better way to do this
@@ -76,7 +81,10 @@ def doformattime(jctime):    ##### need better way to do this
     ttt = t + datetime.timedelta(0,-1)
     time.append(str(ttt.time()))
     return time
+
+
     
+
 
 
 def main():
@@ -86,6 +94,8 @@ def main():
         response = input("Please enter directory where high cpu data resides: ")
     else:
         response = raw_input("Please enter directory where high cpu data resides: ") 
+    newhtml = os.path.join(response,"HighCPUData.html")
+    html = open(newhtml,'w')
     for filename in glob.glob(os.path.join(response,'java*')):
         (mydic,jctime) = doprocessjavacore(filename)
         topdata = []
@@ -95,29 +105,23 @@ def main():
         for filename in glob.glob(os.path.join(response,'top*')):
             tmptopdata = doprocesstop(filename, time)
             topdata.extend(tmptopdata) 
-        #print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
-   # print ("ALL JCDATA\n%s\n" % "\n".join(alljcdata))
-    #print ("MYDIC\n%s\n" % "\n".join(mydic))
-        for line in topdata:
+        topd = iter(topdata)
+        for line in topd:
             tt = re.match(cr_top,line)
             if tt:
                 toptime = tt.group(1)
-                print line.rstrip('\n')
-                
-                
-                # got to be an easier way to do this.... 
-            if 'Tasks' in line: print line.rstrip('\n')
-            if 'Cpu' in line: print line.rstrip('\n')
-            if 'Mem' in line: print line.rstrip('\n')
-            if 'Swap' in line: print line.rstrip('\n')
-            if 'PID' in line: print line.rstrip('\n') + ("ThreadName")
+                html.write('\n' + '\n' + line)
+                for i in range(4):
+                    html.write(next(topd))
+           
+            if 'PID' in line: html.write('\n' + line.rstrip('\n') + "ThreadId" + "     " +  "ThreadName" + '\n')
 
             pt = cr_data.search(line)
             if pt:
                 hpid = hex(int(pt.group(1)))
                 key = (hpid.upper())
                 if key in mydic:
-                    print (line.rstrip('\n') + (mydic.get(key,None)))
+                    html.write (line.rstrip('\n') + hpid + "     " +  (mydic.get(key,None)) + '\n')
                         
                                          
 if __name__ == "__main__":

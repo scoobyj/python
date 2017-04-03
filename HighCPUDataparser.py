@@ -4,6 +4,7 @@ Created on Mar 10, 2017
 from sys import version_info
 import glob, os , pprint ,os.path, re, datetime
 from dateutil.parser import parse
+from Carbon.Aliases import false
 
 
 # Patterns
@@ -27,8 +28,10 @@ pat_jcdata = "(\\S+)\\s(\\S+)\\s(\\S+\\s+:\\s+\\S+)"
 cr_jcdata = re.compile(pat_jcdata)
 pat_pidln = "\\s+(PID)\\s(USER)\\s+(PR)\\s+(NI)\\s+(VIRT)\\s+(RES)\\s+(SHR)\\s(S)\\s(%CPU)\\s(%MEM)\\s+(TIME+)(.*)"
 cr_pidln = re.compile(pat_pidln)
-pat_cpu = "(^Cpu\(s\):\\s\\S+),(.*)"
+pat_cpu = "(^Cpu\(s\):)\\s(\\S+),(.*)"
 cr_cpu = re.compile(pat_cpu)
+stkstart = re.compile('3XMTHREADINFO3')
+stkend = re.compile('NULL')
 
                                        
 def doprocessjavacore(jfilename,response):
@@ -55,8 +58,7 @@ def doprocessjavacore(jfilename,response):
                             threadId = n.group(1)
                             jckey = (threadId.upper())
                             mydic[jckey] = threadName
-                            continue
-
+                            continue                  
                 return mydic,jctime
 
 def doprocesstop(filename, time):
@@ -98,6 +100,7 @@ def main():
     html.write('<html><body><H1>Top 10 process for taken from each Javacore:</H1>')
     
     for jfilename in glob.glob(os.path.join(response,'java*')):
+        #newjcfile = os.path.splitext(os.path.basename(jfilename)) [0]+ ".html"
         (mydic,jctime) = doprocessjavacore(jfilename,response)
         topdata = []
         time = []
@@ -112,15 +115,16 @@ def main():
         for line in topd:
             tt = re.match(cr_top,line)
             if tt:
-                
                 toptime = tt.group(1)
-                html.write('<br><br><B>%s:</B><br>' % jfilename)
-                html.write('<br>%s' %line)
-                for i in range(4):
-                    cpu = cr_cpu.search(line)
-                    if cpu:
-                        html.write('<p><b>%s</b> %s' % cpu.group(1) , cpu.group(2))
-                    html.write('%s</p>' % (next(topd)))  
+                html.write('<br><br><B>%s:</B><br><br>' % jfilename)
+                html.write('%s<br>' %line)
+            cpu = cr_cpu.search(line)
+            if cpu:
+                html.write('<b>%s</b>' % cpu.group(1)) 
+                html.write('<b><span style="color:red">%s</span></b>' % cpu.group(2))
+                html.write('%s<br>' % cpu.group(3))
+                for i in range(3):
+                            html.write('%s<br>' % (next(topd)))     
             pidln = re.match(cr_pidln,line)      
             if pidln: 
                 html.write('<br><table border=\"1\"><tr><td width=\"50\">%s</td>' % pidln.group(1) + '<td width=\"80\">%s</td>' % pidln.group(2) + '<td width=\"80\">%s</td>' % pidln.group(3) + '<td width=\"80\">%s</td>' % pidln.group(4) + '<td width=\"80\">%s</td>' % pidln.group(5) + '<td width=\"50\">%s</td>' % pidln.group(6) + '<td width=\"80\">%s</td>' % pidln.group(7) + '<td width=\"80\">%s</td>' % pidln.group(8) + '<td width=\"80\">%s</td>' % pidln.group(9) + '<td width=\"80\">%s</td>' % pidln.group(10) + '<td width=\"80\">%s</td>' % pidln.group(11) + '<td width=\"120\">%s</td>' % pidln.group(12) + '<td width=\"90\"> Thread ID </td>' + '<td width=\"250\"> Thread Name</td>')
@@ -130,12 +134,16 @@ def main():
                 key = (hpid.upper())
                 if key in mydic:
                     html.write('<tr><td width=\"50\">%s</td>' % pt.group(1) + '<td width=\"80\">%s</td>' % pt.group(2) + '<td width=\"80\">%s</td>' % pt.group(3) + '<td width=\"80\">%s</td>' % pt.group(4) + '<td width=\"80\">%s</td>' % pt.group(5) + '<td width=\"50\">%s</td>' % pt.group(6) + '<td width=\"80\">%s</td>' % pt.group(7) + '<td width=\"80\">%s</td>' % pt.group(8) + '<td width=\"80\"><b>%s</b></td>' % pt.group(9) + '<td width=\"80\">%s</td>' % pt.group(10) + '<td width=\"80\">%s</td>' % pt.group(11)+ '<td width=\"120\">%s</td>' % pt.group(12) + '<td width=\"90\"><b>%s<b></td>' % hpid + '<td width=\"350\">%s</td></tr>' % (mydic.get(key,None)))
+                    
+                    
         html.write('</table>')
                 
         
     print "Writing to %s" % newhtml  
     html.write('</body>\n')
-    html.write('</html>\n')                                        
+    html.write('</html>\n') 
+    
+                                           
 if __name__ == "__main__":
     main()
              

@@ -143,7 +143,7 @@ def main():
                 hpid = hex(int(pt.group(1)))
                 key = (hpid.upper())
                 if key in mydic:
-                    html.write('<tr><td width=\"50\">%s</td>' % pt.group(1) + '<td width=\"80\">%s</td>' % pt.group(2) + '<td width=\"80\">%s</td>' % pt.group(3) + '<td width=\"80\">%s</td>' % pt.group(4) + '<td width=\"80\">%s</td>' % pt.group(5) + '<td width=\"50\">%s</td>' % pt.group(6) + '<td width=\"80\">%s</td>' % pt.group(7) + '<td width=\"80\">%s</td>' % pt.group(8) + '<td width=\"80\"><b>%s</b></td>' % pt.group(9) + '<td width=\"80\">%s</td>' % pt.group(10) + '<td width=\"80\">%s</td>' % pt.group(11)+ '<td width=\"120\">%s</td>' % pt.group(12) + '<td width=\"90\"><b>%s<b></td>' % hpid + '<td width=\"350\">%s</td></tr>' % (mydic.get(key,None)))
+                    html.write('<tr><td width=\"50\">%s</td>' % pt.group(1) + '<td width=\"80\">%s</td>' % pt.group(2) + '<td width=\"80\">%s</td>' % pt.group(3) + '<td width=\"80\">%s</td>' % pt.group(4) + '<td width=\"80\">%s</td>' % pt.group(5) + '<td width=\"50\">%s</td>' % pt.group(6) + '<td width=\"80\">%s</td>' % pt.group(7) + '<td width=\"80\">%s</td>' % pt.group(8) + '<td width=\"80\"><b>%s</b></td>' % pt.group(9) + '<td width=\"80\">%s</td>' % pt.group(10) + '<td width=\"80\">%s</td>' % pt.group(11)+ '<td width=\"120\">%s</td>' % pt.group(12) + '<td width=\"90\"><b>%s<b></td>' % hpid + '<td width=\"350\"><a href=\"%s\#%s">%s<</a>/td></tr>' % (jfilename) , (mydic.get(key,None)) , (mydic.get(key,None)))
                 
         html.write('</table>')
                 

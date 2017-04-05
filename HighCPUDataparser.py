@@ -53,8 +53,10 @@ def doprocessjavacore(jfilename,response,jc):
                     ta = cr_tname2.search(line)
                     if jctime and t:
                         threadName = t.group(1)
+                        jc.write('<h2 id=\"%s\"></h2>' % threadName)
                     elif jctime and ta:
                         threadName = ta.group(1)
+                        jc.write('<h2 id=\"%s\"></h2>' % threadName)
                         continue
                     n = cr_native.search(line)
                     if jctime and threadName and n:

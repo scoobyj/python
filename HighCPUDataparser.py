@@ -34,8 +34,11 @@ stkstart = re.compile('3XMTHREADINFO3')
 stkend = re.compile('NULL')
 
                                        
-def doprocessjavacore(jfilename,response):
+def doprocessjavacore(jfilename,response,jc):
+    jc = open(jc,'w')
+    jc.write('<html><body><p>')
     mydic = {}
+    stacks = {}
     jctime = None
     threadId = None
     threadName = None
@@ -58,7 +61,11 @@ def doprocessjavacore(jfilename,response):
                             threadId = n.group(1)
                             jckey = (threadId.upper())
                             mydic[jckey] = threadName
-                            continue                  
+                            jc.write('<p><pre>%s</pre></p>' % line)
+                            continue     
+                    
+                    jc.write('<pre>%s</pre>' % line)
+                jc.write('</p></body><html>')
                 return mydic,jctime
 
 def doprocesstop(filename, time):
@@ -87,6 +94,7 @@ def doformattime(jctime):
     time.append(str(t3.time()))
     return time
 
+ 
 
 def main():
     py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
@@ -100,8 +108,8 @@ def main():
     html.write('<html><body><H1>Top 10 process for taken from each Javacore:</H1>')
     
     for jfilename in glob.glob(os.path.join(response,'java*')):
-        #newjcfile = os.path.splitext(os.path.basename(jfilename)) [0]+ ".html"
-        (mydic,jctime) = doprocessjavacore(jfilename,response)
+        jc = os.path.splitext(os.path.basename(jfilename)) [0]+ ".html"
+        (mydic,jctime) = doprocessjavacore(jfilename,response,jc)
         topdata = []
         time = []
         if jctime:
@@ -134,8 +142,7 @@ def main():
                 key = (hpid.upper())
                 if key in mydic:
                     html.write('<tr><td width=\"50\">%s</td>' % pt.group(1) + '<td width=\"80\">%s</td>' % pt.group(2) + '<td width=\"80\">%s</td>' % pt.group(3) + '<td width=\"80\">%s</td>' % pt.group(4) + '<td width=\"80\">%s</td>' % pt.group(5) + '<td width=\"50\">%s</td>' % pt.group(6) + '<td width=\"80\">%s</td>' % pt.group(7) + '<td width=\"80\">%s</td>' % pt.group(8) + '<td width=\"80\"><b>%s</b></td>' % pt.group(9) + '<td width=\"80\">%s</td>' % pt.group(10) + '<td width=\"80\">%s</td>' % pt.group(11)+ '<td width=\"120\">%s</td>' % pt.group(12) + '<td width=\"90\"><b>%s<b></td>' % hpid + '<td width=\"350\">%s</td></tr>' % (mydic.get(key,None)))
-                    
-                    
+                
         html.write('</table>')
                 
         

@@ -4,7 +4,6 @@ Created on Mar 10, 2017
 from sys import version_info
 import glob, os , pprint ,os.path, re, datetime
 from dateutil.parser import parse
-from Carbon.Aliases import false
 
 
 # Patterns
@@ -22,7 +21,7 @@ pat_desc = "\\s(\\S+)(.*) SHR S (\\S+)(.*)"
 cr_desc = re.compile(pat_desc)
 pat_time = "(\\S+)\\s(\\S+)\\s(\\S+\\s:\\s\\S+)"
 cr_time = re.compile(pat_time)
-pat_data = "([+]?\d+)\\s(\\S+)\\s+(\\d+?)\\s+(\\d)\\s(\\S+m)\\s(\\S+?g)\\s+(\\S+?m)\\s(\\w)\\s+?(\\S+)\\s(\\d+?.\\d+?)\\s+?(\\d+?\:\\d+?.\\d+?)\\s+?(java)\\s+?"
+pat_data = "([+]?\d+)\\s(\\S+)\\s+(\\d+?)\\s+(\\d)\\s(\\S+)\\s(\\S+?)\\s+(\\S+?)\\s(\\w)\\s+?(\\S+)\\s(\\d+?.\\d+?)\\s+?(\\d+?\:\\d+?.\\d+?)\\s+?(java)\\s+?"
 cr_data = re.compile(pat_data)
 pat_jcdata = "(\\S+)\\s(\\S+)\\s(\\S+\\s+:\\s+\\S+)"
 cr_jcdata = re.compile(pat_jcdata)
@@ -36,14 +35,14 @@ stkend = re.compile('NULL')
                                        
 def doprocessjavacore(jfilename,response,jc):
     jc = open(jc,'w')
-    jc.write('<html><body><p>')
+    jc.write('<html><body><style>pre{display:inline}</style>')
     mydic = {}
     stacks = {}
     jctime = None
     threadId = None
     threadName = None
     with open(jfilename,'r+') as f: 
-                print "Evaluating " + jfilename
+                print ("Evaluating " + jfilename)
                 for line in f:
                     j = cr_datetime.search(line)
                     if j: 
@@ -54,6 +53,7 @@ def doprocessjavacore(jfilename,response,jc):
                     if jctime and t:
                         threadName = t.group(1)
                         jc.write('<h2 id=\"%s\"></h2>' % threadName)
+                        jc.write('<pre><b><H3>%s</H3></b></pre>' % (t.group(1)))
                     elif jctime and ta:
                         threadName = ta.group(1)
                         jc.write('<h2 id=\"%s\"></h2>' % threadName)
@@ -63,11 +63,10 @@ def doprocessjavacore(jfilename,response,jc):
                             threadId = n.group(1)
                             jckey = (threadId.upper())
                             mydic[jckey] = threadName
-                            jc.write('<p><pre>%s</pre></p>' % line)
                             continue     
                     
                     jc.write('<pre>%s</pre>' % line)
-                jc.write('</p></body><html>')
+                jc.write('</body><html>')
                 return mydic,jctime
 
 def doprocesstop(filename, time):
@@ -105,19 +104,18 @@ def main():
     else:
         response = raw_input("Please enter directory where high cpu data resides: ") 
     
-    newhtml = os.path.join(response,"HighCPUData.html")
+    newhtml = os.path.join(response,"top.html")
     html = open(newhtml,'w')
     html.write('<html><body><H1>Top 10 process for taken from each Javacore:</H1>')
     
-    for jfilename in glob.glob(os.path.join(response,'java*')):
-        jc = os.path.splitext(os.path.basename(jfilename)) [0]+ ".html"
+    for jfilename in glob.glob(os.path.join(response,'java*.txt')):
+        jc = (jfilename)+ ".html"
         (mydic,jctime) = doprocessjavacore(jfilename,response,jc)
         topdata = []
         time = []
         if jctime:
             tmptime = doformattime(jctime)
             time.extend(tmptime)
-            
         for filename in glob.glob(os.path.join(response,'top*')):
             tmptopdata = doprocesstop(filename, time)
             topdata.extend(tmptopdata) 
@@ -139,16 +137,24 @@ def main():
             if pidln: 
                 html.write('<br><table border=\"1\"><tr><td width=\"50\">%s</td>' % pidln.group(1) + '<td width=\"80\">%s</td>' % pidln.group(2) + '<td width=\"80\">%s</td>' % pidln.group(3) + '<td width=\"80\">%s</td>' % pidln.group(4) + '<td width=\"80\">%s</td>' % pidln.group(5) + '<td width=\"50\">%s</td>' % pidln.group(6) + '<td width=\"80\">%s</td>' % pidln.group(7) + '<td width=\"80\">%s</td>' % pidln.group(8) + '<td width=\"80\">%s</td>' % pidln.group(9) + '<td width=\"80\">%s</td>' % pidln.group(10) + '<td width=\"80\">%s</td>' % pidln.group(11) + '<td width=\"120\">%s</td>' % pidln.group(12) + '<td width=\"90\"> Thread ID </td>' + '<td width=\"250\"> Thread Name</td>')
             pt = cr_data.search(line)
+            print line
+            print pt
             if pt:
                 hpid = hex(int(pt.group(1)))
                 key = (hpid.upper())
+                print key
                 if key in mydic:
-                    html.write('<tr><td width=\"50\">%s</td>' % pt.group(1) + '<td width=\"80\">%s</td>' % pt.group(2) + '<td width=\"80\">%s</td>' % pt.group(3) + '<td width=\"80\">%s</td>' % pt.group(4) + '<td width=\"80\">%s</td>' % pt.group(5) + '<td width=\"50\">%s</td>' % pt.group(6) + '<td width=\"80\">%s</td>' % pt.group(7) + '<td width=\"80\">%s</td>' % pt.group(8) + '<td width=\"80\"><b>%s</b></td>' % pt.group(9) + '<td width=\"80\">%s</td>' % pt.group(10) + '<td width=\"80\">%s</td>' % pt.group(11)+ '<td width=\"120\">%s</td>' % pt.group(12) + '<td width=\"90\"><b>%s<b></td>' % hpid + '<td width=\"350\"><a href=\"%s\#%s">%s<</a>/td></tr>' % (jfilename) , (mydic.get(key,None)) , (mydic.get(key,None)))
+                    html.write('<tr><td width=\"50\">%s</td>' % pt.group(1) + '<td width=\"80\">%s</td>' % pt.group(2) + '<td width=\"80\">%s</td>' % pt.group(3) + '<td width=\"80\">%s</td>' % pt.group(4) + '<td width=\"80\">%s</td>' % pt.group(5) + '<td width=\"50\">%s</td>' % pt.group(6) + '<td width=\"80\">%s</td>' % pt.group(7) + '<td width=\"80\">%s</td>' % pt.group(8) + '<td width=\"80\"><b>%s</b></td>' % pt.group(9) + '<td width=\"80\">%s</td>' % pt.group(10) + '<td width=\"80\">%s</td>' % pt.group(11)+ '<td width=\"120\">%s</td>' % pt.group(12) + '<td width=\"90\"><b>%s<b></td>' % hpid + '<td width=\"350\"><a href=\"%s#%s" target="frame_jc">%s</a></td></tr>' % (jc.rstrip('\\') , (mydic.get(key,None)) , (mydic.get(key,None))))
                 
         html.write('</table>')
                 
-        
-    print "Writing to %s" % newhtml  
+    hcpufile = os.path.join(response,"HighCpuData.html")
+    hcpu = open(hcpufile,'w')  
+    hcpu.write('<html><frameset rows="400px,*"><frame src="top.html"><frameset rows="900px,*"><frame name="frame_jc"></frameset></frameset></html>')
+      
+    print ("Writing to %s" % newhtml)
+    print ("----------------------------------------------------------------------------------")
+    print (" Please open HighCpuData.html to review the top 10 java process for each javacore")
     html.write('</body>\n')
     html.write('</html>\n') 
     

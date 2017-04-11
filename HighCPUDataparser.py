@@ -2,7 +2,7 @@
 Created on Mar 10, 2017
 '''
 from sys import version_info
-import glob, os , pprint ,os.path, re, datetime, webbrowser, subprocess,sys
+import glob, os , pprint ,os.path, re, datetime, webbrowser, subprocess,sys,argparse
 from dateutil.parser import parse
 
 
@@ -105,9 +105,9 @@ def doformattime(jctime):
 def main():
     py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
     if py3:
-        response = input("Please enter directory where high cpu data resides: ")
+            response = input("Please enter directory where high cpu data resides: ")
     else:
-        response = raw_input("Please enter directory where high cpu data resides: ") 
+            response = raw_input("Please enter directory where high cpu data resides: ") 
     
     newhtml = os.path.join(response,"top.html")
     html = open(newhtml,'w')
@@ -144,7 +144,9 @@ def main():
                 html.write('<b><span style="color:red">%s</span></b>' % cpu.group(2))
                 html.write('%s<br>' % cpu.group(3))
                 for i in range(3):
-                            html.write('%s<br>' % (next(topd)))     
+                            html.write('%s<br>' % (next(topd)))   
+                if float(cpu.group(2).strip('%us')) < 60:
+                    html.write('<b><span style="color:red"> **** Note: Total CPU in red is normally not considered high  ****</span></b>')  
             pidln = re.match(cr_pidln,line)      
             if pidln: 
                 html.write('<br><table border=\"1\"><tr><td width=\"50\">%s</td>' % pidln.group(1) + '<td width=\"80\">%s</td>' % pidln.group(2) + '<td width=\"80\">%s</td>' % pidln.group(3) + '<td width=\"80\">%s</td>' % pidln.group(4) + '<td width=\"80\">%s</td>' % pidln.group(5) + '<td width=\"50\">%s</td>' % pidln.group(6) + '<td width=\"80\">%s</td>' % pidln.group(7) + '<td width=\"80\">%s</td>' % pidln.group(8) + '<td width=\"80\">%s</td>' % pidln.group(9) + '<td width=\"80\">%s</td>' % pidln.group(10) + '<td width=\"80\">%s</td>' % pidln.group(11) + '<td width=\"120\">%s</td>' % pidln.group(12) + '<td width=\"90\"> Thread ID </td>' + '<td width=\"250\"> Thread Name</td>')
@@ -177,7 +179,7 @@ def main():
             subprocess.Popen(['xdg-open', hcpufile])
             print ("Opening HighCpuData.html in browser")
         except OSError:
-            print 'Please open a browser on: '+ hcpufile
+            print ('Please open a browser on: '+ hcpufile)
         #webbrowser.open_new('file://hcpufile')
     
                                            

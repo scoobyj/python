@@ -2,7 +2,7 @@
 Created on Mar 10, 2017
 '''
 from sys import version_info
-import glob, os , pprint ,os.path, re, datetime
+import glob, os , pprint ,os.path, re, datetime, webbrowser, subprocess,sys
 from dateutil.parser import parse
 
 
@@ -31,7 +31,8 @@ pat_cpu = "(^Cpu\(s\):)\\s(\\S+),(.*)"
 cr_cpu = re.compile(pat_cpu)
 stkstart = re.compile('3XMTHREADINFO3')
 stkend = re.compile('NULL')
-
+tm_pat = "(\\d+):(\\d+):(\\d+)"
+cr_tm = re.compile(tm_pat)
                                        
 def doprocessjavacore(jfilename,response,jc):
     jc = open(jc,'w')
@@ -47,6 +48,7 @@ def doprocessjavacore(jfilename,response,jc):
                     j = cr_datetime.search(line)
                     if j: 
                         jctime = j.group(2)
+                        jc.write('<pre>%s</pre><br>' % j.group())
                         continue
                     t = cr_tname.search(line)
                     ta = cr_tname2.search(line)
@@ -69,7 +71,7 @@ def doprocessjavacore(jfilename,response,jc):
                 jc.write('</body><html>')
                 return mydic,jctime
 
-def doprocesstop(filename, time):
+def doprocesstop(filename, time, jfilename):
     topdata = []   
     with open(filename,'r+') as t:
         for line in t:
@@ -78,8 +80,11 @@ def doprocesstop(filename, time):
                 if tt.group(1) in time:
                     topdata.append(line)
                     for i in range(16):
-                        topdata.append(next(t))    
+                        topdata.append(next(t))  
+                
         return topdata
+      
+    
                 
 def doformattime(jctime):   
     time = []  
@@ -116,9 +121,16 @@ def main():
         if jctime:
             tmptime = doformattime(jctime)
             time.extend(tmptime)
-        for filename in glob.glob(os.path.join(response,'top*')):
-            tmptopdata = doprocesstop(filename, time)
-            topdata.extend(tmptopdata) 
+        for filename in glob.glob(os.path.join(response,'topdash*')):
+            tmptopdata = doprocesstop(filename, time,jfilename)
+            if tmptopdata:
+                topdata.extend(tmptopdata) 
+            else:
+                print ("")
+                print ("************** Oops ****************")
+                print ("Topdash data did not contain a timestamp that matched : " + jfilename)
+                print ("************** Oops ****************")
+                print ("")
         topd = iter(topdata)
         for line in topd:
             tt = re.match(cr_top,line)
@@ -154,6 +166,19 @@ def main():
     print (" Please open HighCpuData.html to review the top 10 java process for each javacore")
     html.write('</body>\n')
     html.write('</html>\n') 
+    if sys.platform=='win32':
+        print ("Opening HighCpuData.html in browser")
+        os.startfile(hcpufile)
+    elif sys.platform=='darwin':
+        print ("Opening HighCpuData.html in browser")
+        subprocess.Popen(['open', hcpufile])
+    else:
+        try:
+            subprocess.Popen(['xdg-open', hcpufile])
+            print ("Opening HighCpuData.html in browser")
+        except OSError:
+            print 'Please open a browser on: '+ hcpufile
+        #webbrowser.open_new('file://hcpufile')
     
                                            
 if __name__ == "__main__":

@@ -21,13 +21,13 @@ pat_desc = "\\s(\\S+)(.*) SHR S (\\S+)(.*)"
 cr_desc = re.compile(pat_desc)
 pat_time = "(\\S+)\\s(\\S+)\\s(\\S+\\s:\\s\\S+)"
 cr_time = re.compile(pat_time)
-pat_data = "([+]?\d+)\\s(\\S+)\\s+(\\d+?)\\s+(\\d)\\s(\\S+)\\s(\\S+?)\\s+(\\S+?)\\s(\\w)\\s+?(\\S+)\\s(\\d+?.\\d+?)\\s+?(\\d+?\:\\d+?.\\d+?)\\s+?(java)\\s+?"
+pat_data = "(\\d+)\\s(\\w+)\\s+(\\d+)\\s+(\\d)\\s(\\S+)\\s(\\S+)\\s+(\\S+)\\s(\\S)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+?:\\d+.\\d+)\\s?(.*)"                           
 cr_data = re.compile(pat_data)
 pat_jcdata = "(\\S+)\\s(\\S+)\\s(\\S+\\s+:\\s+\\S+)"
 cr_jcdata = re.compile(pat_jcdata)
 pat_pidln = "\\s+(PID)\\s(USER)\\s+(PR)\\s+(NI)\\s+(VIRT)\\s+(RES)\\s+(SHR)\\s(S)\\s(%CPU)\\s(%MEM)\\s+(TIME+)(.*)"
 cr_pidln = re.compile(pat_pidln)
-pat_cpu = "(^Cpu\(s\):)\\s(\\S+),(.*)"
+pat_cpu = "(Cpu\(s\):)\\s+?(.*?),(.*)"
 cr_cpu = re.compile(pat_cpu)
 stkstart = re.compile('3XMTHREADINFO3')
 stkend = re.compile('NULL')
@@ -103,9 +103,10 @@ def doformattime(jctime):
  
 
 def main():
+    print "Javacores and topdashh should be in same directory"
     py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
     if py3:
-            response = input("Please enter directory where high cpu data resides: ")
+            response = input("Please enter directory where high cpu data resides;   ")
     else:
             response = raw_input("Please enter directory where high cpu data resides: ") 
     
@@ -168,21 +169,27 @@ def main():
     print (" Please open HighCpuData.html to review the top 10 java process for each javacore")
     html.write('</body>\n')
     html.write('</html>\n') 
+    
+    try:
+        input("Press enter to continue and open HighCPUData.html for analysis")
+    except SyntaxError:
+        pass
+    
     if sys.platform=='win32':
-        print ("Opening HighCpuData.html in browser")
-        os.startfile(hcpufile)
-    elif sys.platform=='darwin':
-        print ("Opening HighCpuData.html in browser")
-        subprocess.Popen(['open', hcpufile])
-    else:
-        try:
-            subprocess.Popen(['xdg-open', hcpufile])
             print ("Opening HighCpuData.html in browser")
-        except OSError:
-            print ('Please open a browser on: '+ hcpufile)
+            os.startfile(hcpufile)
+    elif sys.platform=='darwin':
+            print ("Opening HighCpuData.html in browser")
+            subprocess.Popen(['open', hcpufile])
+    else:
+            try:
+                subprocess.Popen(['xdg-open', hcpufile])
+                print ("Opening HighCpuData.html in browser")
+            except OSError:
+                    print ('Please open a browser on: '+ hcpufile)
         #webbrowser.open_new('file://hcpufile')
     
-                                           
+    
 if __name__ == "__main__":
     main()
              

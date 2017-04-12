@@ -103,7 +103,8 @@ def doformattime(jctime):
  
 
 def main():
-    print "Javacores and topdashh should be in same directory"
+    print ("Javacores and topdashh should be in same directory")
+    print ("")
     py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
     if py3:
             response = input("Please enter directory where high cpu data resides;   ")
